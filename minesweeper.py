@@ -135,15 +135,15 @@ class Game(object):
                 print(msg)
                 msg = ""
                 print(line)
-cmd = input("How many rows, columns, and mines?\n(Please give input as 3 integers separated by commas)\n>> ").split(',')
+cmd = input("How many rows, columns, and mines?\n(Please give input as 3 integers separated by commas)\n-> ").split(',')
 myGame = Game(int(cmd[0]),int(cmd[1]),int(cmd[2]))
-move = int(input("What is your first move?\n>> "))
+move = int(input("What is your first move?\n-> "))
 myGame.start(move)
 myGame.state[move].show()
 myGame.print()
 play = True
 while (play):
-    cmd = input("Next move?\n>> ")
+    cmd = input("Next move?\n-> ")
     if cmd == "quit":
         print("Quitting Game!")
         exit()

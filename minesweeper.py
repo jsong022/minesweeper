@@ -1,4 +1,5 @@
 import random
+import time
 
 class Square(object):
     def __init__(self, shown = 9, mine = False, count = 0):
@@ -15,6 +16,7 @@ class Square(object):
     def setFlag(self):
         if self.shown is 9: self.shown = 10
         elif self.shown is 10: self.shown = 9
+        
     def countMines(self):
         if self.mine: return
         self.count = 0
@@ -24,14 +26,18 @@ class Square(object):
     
     def show(self):
         if self.isUnknown():
+            check = 1
             self.shown = self.count
-            if self.count is 0: self.showAround()
-            elif self.mine: return False
-        return True
+            if self.count is 0: check += self.showAround()
+            elif self.mine: return -1
+            return check
+        return 0
 
     def showAround(self):
+        check = 0
         for sqr in self.adj:
-            if sqr is not None: sqr.show()
+            if sqr is not None: check += sqr.show()
+        return check
         
     #returns true iff the square's value is negative i.e. it is a Mine
     def isMine(self):
@@ -53,6 +59,7 @@ class Game(object):
     def __init__(self, row, col, minecount):
         self.row = row
         self.col = col
+        self.numChecked = 0
         self.minecount = minecount
         self.state = []
         for i in range(row*col):
@@ -94,6 +101,23 @@ class Game(object):
         #calculate the number in each Square of the current game
         for sqr in self.state:
             sqr.countMines()
+        return time.time()
+
+    # returns true iff number of unchecked mines is the same and minecount
+    # i.e. the game has been won
+    def checkEnd(self):
+        return (self.row * self.col) - self.numChecked == self.minecount 
+
+    def flag(self, pos):
+        self.state[pos].setFlag()
+        self.print()
+
+    def show(self, pos):
+        temp = self.state[pos].show()
+        self.print()
+        if temp is -1: return False
+        self.numChecked += temp
+        return True;
 
     #prints out the current state
     def print(self):
@@ -135,27 +159,75 @@ class Game(object):
                 print(msg)
                 msg = ""
                 print(line)
-cmd = input("How many rows, columns, and mines?\n(Please give input as 3 integers separated by commas)\n-> ").split(',')
-myGame = Game(int(cmd[0]),int(cmd[1]),int(cmd[2]))
-move = int(input("What is your first move?\n-> "))
-myGame.start(move)
-myGame.state[move].show()
-myGame.print()
-play = True
-while (play):
-    cmd = input("Next move?\n-> ")
-    if cmd == "quit":
-        print("Quitting Game!")
-        exit()
-    cmd = cmd.split(" ")
-    if (len(cmd) is not 2) or (int(cmd[1]) >= len(myGame.state)) or (int(cmd[1]) < 0):
-        print("Invalid Input! Try Again.")
-    elif cmd[0] == "show" or cmd[0] == "s":
-        play = myGame.state[int(cmd[1])].show()
-        myGame.print()
-    elif cmd[0] == "flag" or cmd[0] == "f":
-        myGame.state[int(cmd[1])].setFlag()
-        myGame.print()
-    else:
-        print("Invalid Input! Try Again.")
-    if not play: print("YOU LOSE!")
+
+class App(object):
+    def __init__(self):
+        myGame = None
+        startTime = None
+        endTime = None
+        playing = False
+
+    def endGame(self, msg):
+        print(msg)
+        self.endTime = time.time()
+        elapsedTime = self.endTime - self.startTime
+        readableTime = str(int((elapsedTime / 60) / 60))
+        readableTime += ":" + str(int(elapsedTime / 60))
+        readableTime += ":" + str(elapsedTime % 60)[0:6]
+        print("Time: " + readableTime)
+        self.playing = False
+
+    def setUp(self):
+        prompt = "How many rows, columns, and mines?"
+        prompt += "\n(Please give input as 3 integers separated by spaces)\n-> "
+        cmd = input(prompt).split(' ')
+        self.myGame = Game(int(cmd[0]),int(cmd[1]),int(cmd[2]))
+        self.myGame.print()
+
+    def firstMove(self):
+        move = int(input("What is your first move?\n-> "))
+        self.startTime = self.myGame.start(move)
+        self.playing = self.myGame.show(move)
+        if (self.playing):
+            if self.myGame.checkEnd(): self.endGame("You Win!")
+        else: self.endGame("You Lose!")
+
+    def makeMoves(self):
+        while self.playing:
+            cmd = input("Next move?\n-> ")
+            if cmd == "give up":
+                self.endGame("Giving up...")
+            elif cmd == "quit":
+                print("Quitting Game!")
+                exit()
+            cmd = cmd.split(" ")
+            if (len(cmd) is not 2) or (int(cmd[1]) >= len(self.myGame.state)) or (int(cmd[1]) < 0):
+                print("Invalid Input! Try Again.")
+            elif cmd[0] == "show" or cmd[0] == "s":
+                self.playing = self.myGame.show(int(cmd[1]))
+                if (self.playing):
+                    if self.myGame.checkEnd(): self.endGame("You Win!")
+                else: self.endGame("You Lose!")
+            elif cmd[0] == "flag" or cmd[0] == "f":
+                self.myGame.flag(int(cmd[1]))
+            else:
+                print("Invalid Input! Try Again.")
+
+    def playGame(self):
+        self.setUp()
+        self.firstMove()
+        self.makeMoves()
+        replay = True
+        while replay:
+            cmd = input("\nPlay Again? (y/n)\n-> ")
+            if cmd == "y":
+                replay = False
+                self.playGame()
+            elif cmd == "n":
+                replay = False
+                print("Quitting Game!")
+                exit()
+            else:
+                print("Please input 'y' for yes or 'n' for no") 
+    
+App().playGame()

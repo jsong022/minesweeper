@@ -15,11 +15,6 @@ My own version of the classic Minesweeper game
 		- I = position on the board to check
 		- Position index starts from 0 as top-left corner.
 		- Index increments from left to right and top to bottom
-		- example:
-			0	1	2
-			3	4	5
-			6	7	8
-			9	10	11
 - All subsequent can be either a "show" or a "flag" action
 	- a Show action input format may be "show i" or "s i"
 		- i = position on the board to check as an integer
@@ -43,6 +38,10 @@ My own version of the classic Minesweeper game
 - 1-8 = Number of Mines Adjacent to that Square
 - MN = Revealed Mine Square
 
+### Board Indexing Example
+0	1	2	3	4
+5	6	7	8	9
+10	11	12	13	14
 
 ### To-Do
 - [x] Implement a simple version of the game with hard coded settings

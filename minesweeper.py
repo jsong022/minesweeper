@@ -175,6 +175,7 @@ class App(object):
         readableTime += ":" + str(int(elapsedTime / 60))
         readableTime += ":" + str(elapsedTime % 60)[0:6]
         print("Time: " + readableTime)
+        if msg == "You Lose!": self.myGame.printSolution()
         self.playing = False
 
     def setUp(self):
@@ -190,7 +191,8 @@ class App(object):
         self.playing = self.myGame.show(move)
         if (self.playing):
             if self.myGame.checkEnd(): self.endGame("You Win!")
-        else: self.endGame("You Lose!")
+        else:
+            self.endGame("You Lose!")
 
     def makeMoves(self):
         while self.playing:

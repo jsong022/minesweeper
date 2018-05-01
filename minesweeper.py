@@ -1,6 +1,5 @@
 import random
 import time
-from tkinter import *
 
 class Square(object):
     def __init__(self, shown = 9, mine = False, count = 0):
@@ -233,7 +232,4 @@ class App(object):
             else:
                 print("Please input 'y' for yes or 'n' for no") 
     
-#App().playGame()
-window = Tk()
-window.title("Minesweeper")
-window.mainloop()
+App().playGame()

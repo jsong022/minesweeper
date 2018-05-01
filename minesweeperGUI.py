@@ -4,19 +4,19 @@ import tkinter as tk
 from tkinter import messagebox
 
 class myLabel(tk.Label):
-    def __init__(self, window, image, row, col, tile):
+    def __init__(self, parent, image, row, col, tile):
         """ Custom Attributes:
             self.row: Integer denoting the row location of this Label (e.g. 0 is first row)
             self.col: Integer denoting the column location of this Label (e.g. 0 is left most column)
             self.tile: points to the Tile() instance this myLabel belongs to
         """
-        tk.Label.__init__(self,window, image=image)
+        tk.Label.__init__(self,parent, image=image)
         self.row = row
         self.col = col
         self.tile = tile
         
 class Tile(object):
-    def __init__(self, window, row, col):
+    def __init__(self, parent, row, col):
         """ sets up self.images[] attribute which loads all the images needed by a Tile
                 [0] is empty background
                 [1] to [8] are the numbers
@@ -29,7 +29,7 @@ class Tile(object):
                 self.inPlay: boolean that is True if the game is in play
                 self.count: Integer for number of adjacent mine Tiles (-1 if mine)
                 self.numFlags: Integer for number of adjacent Flagged Tiles
-                self.window: the parent element (should be main window)
+                self.parent: the parent element (should be main window)
                 self.adj: a list() to hold adjacent Tile instances
                 self.label: a myLabel() that shows the mine/number of adjacent mines
                 self.button: a myLabel() that is hiding the Tile's value
@@ -44,14 +44,14 @@ class Tile(object):
         self.inPlay = True
         self.count = 0
         self.numFlags = 0
-        self.window = window
+        self.parent = parent
         self.adj = []
 
         #set up the 2 myLabel() objects and place them on the grid
-        self.label = myLabel(window, image=self.images[0], row=row, col=col, tile=self)
+        self.label = myLabel(parent, image=self.images[0], row=row, col=col, tile=self)
         self.label.config(padx = 0, pady = 0, borderwidth = 0)
         self.label.grid(row = row, column = col)
-        self.button = myLabel(window, image=self.images[10], row=row, col=col, tile=self)
+        self.button = myLabel(parent, image=self.images[10], row=row, col=col, tile=self)
         self.button.config(padx = 0, pady = 0, borderwidth = 0)
         self.button.grid(row = row, column = col)
         
@@ -169,12 +169,12 @@ class Tile(object):
         return self.inPlay
 
 class Board(object):
-    def __init__(self, rows, cols, minecount, window):
+    def __init__(self, rows, cols, minecount, parent):
         self.rows = rows
         self.cols = cols
         self.numChecked = 0
         self.minecount = minecount
-        self.window = window
+        self.parent = parent
         self.tiles = []
         self.mines = []
         self.minesArmed = False
@@ -184,7 +184,7 @@ class Board(object):
         for row in range(rows):
             self.tiles.append([])
             for col in range(cols):
-                self.tiles[row].append(Tile(window=window, row=row, col=col))
+                self.tiles[row].append(Tile(parent=parent, row=row, col=col))
                 self.tiles[row][col].button.bind('<ButtonPress-1>',  self.setUpBombs)
                 self.tiles[row][col].button.bind('<ButtonRelease-1>',  self.showTile)
                 
@@ -261,13 +261,28 @@ class Board(object):
         msg +="Time: " + readableTime
         self.revealBombs()
         messagebox.showinfo('Game Over', msg)
-            
+
+def game(rows,cols,mines,root):
+    root.destroy()
+    main(rows,cols,mines)
+
 def main(rows, cols, mines):
-    window = tk.Tk()
-    window.title("Minesweeper")
-    myBoard = Board(rows, cols, mines, window)
-    window.geometry(str(20*cols)+"x"+str(20*rows))
-    window.mainloop()
-    
+    root = tk.Tk()
+    menu = tk.Menu(root)
+    root.config(menu=menu)
+    root.title("Minesweeper")
+    gamemenu = tk.Menu(menu)
+    menu.add_cascade(label="Game", menu=gamemenu)
+    gamemenu.add_command(label="Beginner", command=lambda: game(8,8,10,root))
+    gamemenu.add_command(label="Intermediate", command=lambda: game(16,16,40,root))
+    gamemenu.add_command(label="Expert", command=lambda: game(16,30,99,root))
+    gamemenu.add_separator()
+    gamemenu.add_command(label="Custom", command=None)
+    gamemenu.add_separator()
+    gamemenu.add_command(label="Exit", command=root.destroy)
+    myBoard = Board(rows, cols, mines, root)
+    root.geometry(str(20*cols)+"x"+str(20*rows))
+    root.mainloop()
+
 if __name__ == "__main__":
     main(10,10,20)

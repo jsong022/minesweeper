@@ -7,6 +7,11 @@ My own versions of the classic Minesweeper game. 2 versions both written with Py
 - minesweeper.py - runs a command line interface version
 - minesweeperGUI.py - runs a Minesweeper game with a GUI built with tkinter
 
+### Instructions for GUI version
+- left click on boxes to reveal that tile
+- right click on boxes to toggle flag
+	- flagged tile cannot be revealed (unless by cascade)
+
 ### Instructions for Command Line version
 - Game will first prompt for the minefield dimensions and the total number of mines
 	- input format should be "R C M" where R, C, and M are integers separated by a space

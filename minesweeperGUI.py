@@ -3,9 +3,15 @@ import time
 import tkinter as tk
 from tkinter import messagebox
 
-class myButton(tk.Button):
-    def __init__(self, window, text, row, col, rows, cols):
-        tk.Button.__init__(self,window, text=text)
+class myLabel(tk.Label):
+    def __init__(self, window, image, row, col, rows, cols):
+        """ Custom Attributes:
+            self.row: Integer denoting the row location of this Label (e.g. 0 is first row)
+            self.col: Integer denoting the column location of this Label (e.g. 0 is left most column)
+            self.rows: Integer, total number of rows in the game (10 is 10 total rows (0 to 9))
+            self.cols: Integer, total number of columns in the game (10 is 10 total columnss (0 to 9))
+        """
+        tk.Label.__init__(self,window, image=image)
         self.row = row
         self.col = col
         self.rows = rows
@@ -13,74 +19,146 @@ class myButton(tk.Button):
         
 class Tile(object):
     def __init__(self, window, row, col, rows, cols, shown = False, mine = False, count = 0):
+        """ sets up self.images[] attribute which loads all the images needed by a Tile
+                [0] is empty background
+                [1] to [8] are the numbers
+                [9] is a mine, [10] is empty button, [11] is flag 
+            Attributes:
+                self.shown: boolean that is True when Tile has been revealed
+                self.mine: boolean that is True if the Tile is a mine
+                self.flag: boolean that is True if the Tile has been flagged
+                self.count: Integer for number of adjacent mine Tiles (-1 if mine)
+                self.numFlags: Integer for number of adjacent Flagged Tiles
+                self.window: the parent element (should be main window)
+                self.adj: a list() to hold adjacent Tile instances
+                self.label: a myLabel() that shows the mine/number of adjacent mines
+                self.button: a myLabel() that is hiding the Tile's value
+        """
+        #set up instance variables
+        self.images = []
+        for i in range(12):
+            self.images.append(tk.PhotoImage(file = "images/tile-"+str(i)+".gif"))
         self.shown = shown
         self.mine = mine
-        self.count = count
-        self.window = window
         self.flag = False
+        self.count = count
+        self.numFlags = 0
+        self.window = window
         self.adj = []
-        self.label = tk.Label(window, text=str(count))
+
+        #set up the 2 myLabel() objects and place them on the grid
+        self.label = myLabel(window, image=self.images[0], row=row, col=col, rows=rows, cols=cols)
+        self.label.config(padx = 0, pady = 0, borderwidth = 0)
         self.label.grid(row = row, column = col)
-        self.button = myButton(window, text="  ", row=row, col=col, rows=rows, cols=cols)
+        self.button = myLabel(window, image=self.images[10], row=row, col=col, rows=rows, cols=cols)
+        self.button.config(padx = 0, pady = 0, borderwidth = 0)
         self.button.grid(row = row, column = col)
-        #right click press
+        
+        #right click press listener on button
         self.button.bind('<ButtonPress-3>', self.rightClickPress)
-        #right click release
+        #right click release listener on button
         self.button.bind('<ButtonRelease-3>', self.setFlag)
 
+    
     def setMine(self):
+        """Sets the Tile as a mine
+            self.count attribute is changed to -1 (old code kept around just in case)
+            self.label's image is change to be the Mine (still hidden by self.button)
+            marks self.mine boolean attribute to be true
+        """
         self.count = -1
-        self.label.configure(text = "X")
+        self.label.configure(image = self.images[9])
         self.mine = True
 
     def rightClickPress(self, event):
-        self.button.configure(relief = "sunken")
+        """Changes the image of self.button, a myLabel() object
+            to indicate it is currently being clicked on
+        """
+        self.button.configure(image = self.images[0])
         
     def setFlag(self, event):
+        """Toggles the flag on the tile if it is still unknown
+            self.flag boolean attribute is toggled
+            and changes the image of self.button, a myLabel() hiding the hidden mine/number
+        """
         if self.shown: return
-        self.button.configure(relief = "raised")
         self.flag = not(self.flag)
-        self.button.configure(text = "!!" if self.flag else "  ")
-    
+        image_index = 11 if self.flag else 10
+        self.button.configure(image = self.images[image_index])
+
+        
+    def countFlags(self):
+        """Counts the number of flags around the current Tile()
+            saves the number in self.numFlags attribute
+            and returns the final self.numFlags
+        """
+        num = 0
+        for tile in self.adj:
+            num += 1 if tile.isFlagged() else 0
+        self.numFlags = num
+        return self.numFlags
+
     def countMines(self):
+        """Counts the number of mines around the current Tile()
+            saves the count in self.count attribute.
+            Additionally, it changes the self.label
+
+            Does not count if this Tile() is a mine.
+        """
         if self.mine:
             return
         num = 0
         for tile in self.adj:
             num += 1 if tile.isMine() else 0
         self.count = num
-        self.label.configure(text = str(num) + " ")
+        self.label.configure(image = self.images[num])
     
     def show(self, event=None):
+        """ Removes the self.button myLabel() that has been hiding the value/mine
+            Has no effect on Tiles that are already being shown
+            Calls self.showAround() to cascade if self.count == 0
+            Returns -1 if one or more of the revealed Tiles is a Mine.
+            Returns the number of Tiles revealed by it as an Integer.
+        """
         if not self.shown:
             check = 1
             self.shown = True
             self.button.grid_remove()
-            if self.count == 0: check += self.showAround()
+            if self.count == 0:
+                num = self.showAround()
+                if (check < 0) or (num < 0): check = -1
+                else: check += num
             elif self.mine: return -1
             return check
         return 0
 
     def showAround(self):
+        """ Calls show() on all Tiles around self
+            Returns -1 if one or more of mines have been revealed
+            Otherwise returns the total number of tiles revealed
+        """
         check = 0
         for sqr in self.adj:
-            if sqr is not None: check += sqr.show()
+            if sqr is not None:
+                num = sqr.show()
+                if (check < 0) or (num < 0): check = -1
+                else: check += num
         return check
-        
-    #returns true iff the square's value is negative i.e. it is a Mine
+
     def isMine(self):
+        """ returns self.mine which is True if the Tile is a mine"""
         return self.mine
 
-    #returns true iff the square's value is 0
     def isZero(self):
+        """ returns self.count == 0 i.e. True only if there are no Mines around this Tile"""
         return self.count == 0
 
-    #returns true iff shown is 9 i.e. the square is not currently being shown
     def isShown(self):
+        """ returns self.shown which is True if the Tile has been revealed"""
         return self.shown
     
-    #returns true iff shown is 10 i.e. the square is flagged as a mine
     def isFlagged(self):
+        """ returns true iff shown is 10 i.e. the square is flagged as a mine"""
         return self.flag
 
 class Board(object):
@@ -133,8 +211,8 @@ class Board(object):
             self.mines.append(temp)
         #mark all mine squares as mines
         for mine in self.mines:
-            targetRow = int(mine/cols)
-            targetCol = mine % cols
+            targetRow = int(mine/event.widget.cols)
+            targetCol = mine % event.widget.cols
             self.tiles[targetRow][targetCol].setMine()
         #calculate the number in each Square of the current game
         for row in self.tiles:
@@ -163,9 +241,12 @@ class Board(object):
             messagebox.showinfo('Game Over', msg)
             quit()
 
-rows, cols = 10, 10
-window = tk.Tk()
-window.title("Minesweeper")
-myBoard = Board(rows, cols, 20, window)
-window.geometry("500x500")
-window.mainloop()
+def main(rows, cols, mines):
+    window = tk.Tk()
+    window.title("Minesweeper")
+    myBoard = Board(rows, cols, mines, window)
+    window.geometry(str(20*cols)+"x"+str(20*rows))
+    window.mainloop()
+    
+if __name__ == "__main__":
+    main(10,10,20)

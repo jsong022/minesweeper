@@ -62,4 +62,5 @@ My own versions of the classic Minesweeper game. 2 versions both written with Py
 - [ ] Implement all base gameplay functionality in GUI version
 	- custom game settings (currently hardcoded 10x10 board wtih 20 mines) 
 	- proper end of game (currently program just quits upon win/loss)
-- [ ] Make GUI look pretty
+	- Add comments/docstrings (IN PROGRESS)
+- [ ] Make GUI look pretty (IN PROGRESS)

@@ -10,7 +10,7 @@ My own versions of the classic Minesweeper game. 2 versions both written with Py
 ### Instructions for GUI version
 - left click on boxes to reveal that tile
 - right click on boxes to toggle flag
-	- flagged tile cannot be revealed (unless by cascade)
+	- flagged tile cannot be revealed
 
 ### Instructions for Command Line version
 - Game will first prompt for the minefield dimensions and the total number of mines

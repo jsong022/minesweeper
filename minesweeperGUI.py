@@ -120,7 +120,7 @@ class Tile(object):
             Returns -1 if one or more of the revealed Tiles is a Mine.
             Returns the number of Tiles revealed by it as an Integer.
         """
-        if not self.shown:
+        if not self.shown and not self.flag:
             check = 1
             self.shown = True
             self.button.grid_remove()

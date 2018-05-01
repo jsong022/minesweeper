@@ -1,9 +1,13 @@
 ## Minesweeper
 
 ### Introduction
-My own version of the classic Minesweeper game
+My own versions of the classic Minesweeper game. 2 versions both written with Python 3.6.3. 
 
-### Instructions
+### File Descriptions
+- minesweeper.py - runs a command line interface version
+- minesweeperGUI.py - runs a Minesweeper game with a GUI built with tkinter
+
+### Instructions for Command Line version
 - Game will first prompt for the minefield dimensions and the total number of mines
 	- input format should be "R C M" where R, C, and M are integers separated by a space
 		- R = # of rows i.e. board height
@@ -31,14 +35,14 @@ My own version of the classic Minesweeper game
 - Game will ask if user wants to replay upon game ending
 	- input should be "y" for yes or "n" for no
 
-### Game Board Notation Legend
+### Game Board Notation Legend of Command Line version
 - ?? = Unknown Square
 - !! = Flagged Square
 - __ = Empty Square
 - 1-8 = Number of Mines Adjacent to that Square
 - MN = Revealed Mine Square
 
-### Board Indexing Example
+### Board Indexing Example of Command Line version
 0	1	2
 
 3	4	5
@@ -49,4 +53,8 @@ My own version of the classic Minesweeper game
 - [x] Implement a simple version of the game with hard coded settings
 - [x] Implement a command line interface for the set up
 - [x] Finalize the base gameplay logic (win condition, replays, timer, etc)
-- [ ] Create a GUI
+- [x] Create a GUI
+- [ ] Implement all base gameplay functionality in GUI version
+	- custom game settings (currently hardcoded 10x10 board wtih 20 mines) 
+	- proper end of game (currently program just quits upon win/loss)
+- [ ] Make GUI look pretty

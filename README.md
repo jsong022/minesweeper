@@ -11,6 +11,10 @@ My own versions of the classic Minesweeper game. 2 versions both written with Py
 - left click on boxes to reveal that tile
 - right click on boxes to toggle flag
 	- flagged tile cannot be revealed
+- on Loss:
+	- all Mines that have not been flagged are revealed
+	- Exploded Mine (the cause of loss) is marked with a red background
+	- all incorrect Flags are crossed out
 
 ### Instructions for Command Line version
 - Game will first prompt for the minefield dimensions and the total number of mines
@@ -60,7 +64,7 @@ My own versions of the classic Minesweeper game. 2 versions both written with Py
 - [x] Finalize the base gameplay logic (win condition, replays, timer, etc)
 - [x] Create a GUI
 - [ ] Implement all base gameplay functionality in GUI version
-	- custom game settings (currently hardcoded 10x10 board wtih 20 mines) 
-	- proper end of game (currently program just quits upon win/loss)
-	- Add comments/docstrings (IN PROGRESS)
+	- [ ] custom game settings (currently hardcoded 10x10 board wtih 20 mines) 
+	- [x] proper end of game (currently program just quits upon win/loss)
+	- [ ] Add comments/docstrings (IN PROGRESS)
 - [ ] Make GUI look pretty (IN PROGRESS)

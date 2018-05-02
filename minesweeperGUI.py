@@ -53,7 +53,7 @@ class Tile(object):
         self.button = myLabel(parent, image=Tile.images[10], row=row, col=col, tile=self)
         self.button.configure(padx = 0, pady = 0, borderwidth = 0)
         self.button.grid(row = row+1, column = col)
-
+    
     def replay(self):
         """ Resets the Tile to for the game to be restarted """
         if self.shown: self.button.grid(row = self.label.row+1, column=self.label.col)
@@ -203,6 +203,34 @@ class Board(object):
         self.setUpFrame()
         self.addTiles(rows,cols,minecount)
         self.setTileAdjacencies(rows,cols)
+
+    def resize(self, rows, cols, minecount, event=None):
+        """ clears the self.frame then rebuilds it based on new specifications"""
+        self.clearFrame()
+        self.rows = rows
+        self.cols = cols
+        self.numMines = minecount
+        self.numChecked = 0
+        self.numFlags = 0
+        self.minesArmed = False
+        self.startTime = None
+        
+        self.setUpFrame()
+        self.addTiles(rows,cols,minecount)
+        self.setTileAdjacencies(rows,cols)
+        
+        windowWidth = str(20*cols+40)
+        windowHeight = str(20*rows+60)
+        self.parent.minsize(windowWidth, windowHeight)
+        self.parent.maxsize(windowWidth, windowHeight)
+        self.parent.geometry(windowWidth+'x'+windowHeight)
+        
+    def clearFrame(self, event=None):
+        """ clears self.frame and destroys it so it can be rebuilt"""
+        for widget in self.frame.winfo_children():
+            widget.destroy()
+        del self.tiles[:]
+        self.frame.destroy()
         
     def setUpFrame(self):
         """ sets up the Frame and Labels to be used
@@ -333,8 +361,8 @@ class Board(object):
             i.e. if Tile not isFlagged()
             also calls setUpBombs() if this is the first left click of the game
         """
-        self.changeSmile(2)
         clickedTile = event.widget.tile
+        if clickedTile.isInPlay(): self.changeSmile(2)
         if not clickedTile.isFlagged():
             clickedTile.buttonPress()
             if not self.minesArmed and event.num == 1:
@@ -342,7 +370,7 @@ class Board(object):
 
     def toggleFlag(self, event):
         """ calls setFlag() on the Tile that was right clicked"""
-        self.changeSmile(1)
+        if event.widget.tile.isInPlay(): self.changeSmile(1)
         self.numFlags += event.widget.tile.setFlag()
         self.flagLabel.configure(text="Flags: "+str(self.numFlags))
         
@@ -351,26 +379,26 @@ class Board(object):
         """ Changes the image on the adjacent Tiles to be clicked
             only if the adjacent Tile is not flagged and not shown
         """
-        self.changeSmile(2)
         clickedTile = event.widget.tile
+        if clickedTile.isInPlay(): self.changeSmile(2)
         for adjTile in clickedTile.adj:
             if not adjTile.isFlagged():
                 adjTile.buttonPress()
         
     def showTile(self, event):
         """ calls show() on clicked Tile if applicable"""
-        self.changeSmile(1)
         if event.widget.tile.isInPlay():
+            self.changeSmile(1)
             returned = event.widget.tile.show()
             self.checkEnd(returned)
 
     def showAdjTiles(self,event):
         """ calls showAround() on clicked Tile if applicable"""
-        self.changeSmile(1)
         clickedTile = event.widget.tile
+        if clickedTile.isInPlay(): self.changeSmile(1)
         if clickedTile.isSafe() and clickedTile.isInPlay(): 
-            returned = event.widget.tile.showAround()
-            self.checkEnd(returned)
+                returned = event.widget.tile.showAround()
+                self.checkEnd(returned)
         else:
             for adjTile in clickedTile.adj:
                 if not adjTile.isFlagged():
@@ -408,15 +436,8 @@ class Board(object):
         self.flagLabel.configure(text="Flags: "+str(self.numFlags))
         messagebox.showinfo('Game Over', msg)
 
-def reset(rows,cols,mines,root):
-    """ Calls root.destroy and restarts the game with given settings
-        Arguments:
-            rows = # rows in the new game
-            cols = # columns in the new game
-            mines = # of mines in the new game
-    """
-    root.destroy()
-    main(rows,cols,mines)
+def options(board, menuVar):
+    return
 
 def main(rows, cols, mines):
     root = tk.Tk()
@@ -429,22 +450,24 @@ def main(rows, cols, mines):
     root.configure(menu=menu)
     root.title("Minesweeper")
     myBoard = Board(rows, cols, mines, root)
+    menuVar = tk.IntVar(root)
+    menuVar.set(4)
     gamemenu = tk.Menu(menu, tearoff = False)
     menu.add_cascade(label="Game", menu=gamemenu)
-    gamemenu.add_command(label="Replay", command=lambda: myBoard.replay())
+    gamemenu.add_command(label="New Game", command=myBoard.replay)
     gamemenu.add_separator()
-    gamemenu.add_command(label="Beginner", command=lambda: reset(8,8,10,root))
-    gamemenu.add_command(label="Intermediate", command=lambda: reset(16,16,40,root))
-    gamemenu.add_command(label="Expert", command=lambda: reset(16,30,99,root))
+    gamemenu.add_radiobutton(variable = menuVar, value=1, label="Beginner", command=lambda: myBoard.resize(8,8,10))
+    gamemenu.add_radiobutton(variable = menuVar, value=2, label="Intermediate", command=lambda: myBoard.resize(16,16,40))
+    gamemenu.add_radiobutton(variable = menuVar, value=3, label="Expert", command=lambda: myBoard.resize(16,30,99))
     gamemenu.add_separator()
-    gamemenu.add_command(label="Custom", command=None)
+    gamemenu.add_radiobutton(variable = menuVar, value=4, label="Custom", command=lambda: options(myBoard, menuVar))
     gamemenu.add_separator()
     gamemenu.add_command(label="Exit", command=root.destroy)
     windowWidth = str(20*cols+40)
     windowHeight = str(20*rows+60)
-    root.geometry(windowWidth+'x'+windowHeight)
     root.minsize(windowWidth, windowHeight)
     root.maxsize(windowWidth, windowHeight)
+    root.geometry(windowWidth+'x'+windowHeight)
     root.mainloop()
 
 if __name__ == "__main__":

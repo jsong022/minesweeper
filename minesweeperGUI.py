@@ -16,13 +16,15 @@ class myLabel(tk.Label):
         self.tile = tile
         
 class Tile(object):
+    # images[] is a Tile class which will hold all the images needed by a Tile
+    #   [0] is empty background
+    #   [1] to [8] are the numbers
+    #   [9] is a mine, [10] is empty button, [11] is flag
+    #   [12] is incorrect flag, [13] is exploded mine
+    images = []
+        
     def __init__(self, parent, row, col):
-        """ sets up self.images[] attribute which loads all the images needed by a Tile
-                [0] is empty background
-                [1] to [8] are the numbers
-                [9] is a mine, [10] is empty button, [11] is flag
-                [12] is incorrect flag, [13] is exploded mine
-            Attributes:
+        """ Attributes:
                 self.shown: boolean that is True when Tile has been revealed
                 self.mine: boolean that is True if the Tile is a mine
                 self.flag: boolean that is True if the Tile has been flagged
@@ -35,9 +37,6 @@ class Tile(object):
                 self.button: a myLabel() that is hiding the Tile's value
         """
         #set up instance variables
-        self.images = []
-        for i in range(14):
-            self.images.append(tk.PhotoImage(file = "images/tile-"+str(i)+".gif"))
         self.shown = False
         self.mine = False
         self.flag = False
@@ -48,59 +47,61 @@ class Tile(object):
         self.adj = []
 
         #set up the 2 myLabel() objects and place them on the grid
-        self.label = myLabel(parent, image=self.images[0], row=row, col=col, tile=self)
-        self.label.config(padx = 0, pady = 0, borderwidth = 0)
-        self.label.grid(row = row, column = col)
-        self.button = myLabel(parent, image=self.images[10], row=row, col=col, tile=self)
-        self.button.config(padx = 0, pady = 0, borderwidth = 0)
-        self.button.grid(row = row, column = col)
-        
-        #right click press listener on button
-        self.button.bind('<ButtonPress-3>', self.buttonPress)
-        #right click release listener on button
-        self.button.bind('<ButtonRelease-3>', self.setFlag)
-    
+        self.label = myLabel(parent, image=Tile.images[0], row=row, col=col, tile=self)
+        self.label.configure(padx = 0, pady = 0, borderwidth = 0)
+        self.label.grid(row = row+1, column = col)
+        self.button = myLabel(parent, image=Tile.images[10], row=row, col=col, tile=self)
+        self.button.configure(padx = 0, pady = 0, borderwidth = 0)
+        self.button.grid(row = row+1, column = col)
+
+    def replay(self):
+        """ Resets the Tile to for the game to be restarted """
+        if self.shown: self.button.grid(row = self.label.row+1, column=self.label.col)
+        self.shown = False
+        self.mine = False
+        self.flag = False
+        self.inPlay = True
+        self.count = 0
+        self.numFlags = 0
+        self.label.configure(image=Tile.images[0])
+        self.button.configure(image=Tile.images[10])
+
     def setMine(self):
-        """Sets the Tile as a mine
+        """ Sets the Tile as a mine
             self.count attribute is changed to -1 (old code kept around just in case)
             self.label's image is change to be the Mine (still hidden by self.button)
             marks self.mine boolean attribute to be true
         """
         self.count = -1
-        self.label.configure(image = self.images[9])
+        self.label.configure(image = Tile.images[9])
         self.mine = True
 
     def buttonPress(self, event=None):
-        """Changes the image of self.button, a myLabel() object
+        """ Changes the image of self.button, a myLabel() object
             to indicate it is currently being clicked on
             Only works for Tiles that are in play (self.inPlay == True)
         """
-        if self.inPlay: self.button.configure(image = self.images[0])
+        if self.inPlay: self.button.configure(image = Tile.images[0])
         
-    def setFlag(self, event):
-        """Toggles the flag on the tile if it is still unknown and in play
+    def setFlag(self):
+        """ Toggles the flag on the tile if it is still unknown and in play
             self.flag boolean attribute is toggled
             and changes the image of self.button, a myLabel() hiding the hidden mine/number
+            also increments or decrements the numFlags of all adjacent Tiles
+            Returns 1 if flag is toggled on and -1 if flag is toggled off
+            Returns 0 if flag was not toggled
         """
-        if self.shown or not self.inPlay: return
+        if self.shown or not self.inPlay: return 0
         self.flag = not(self.flag)
         image_index = 11 if self.flag else 10
-        self.button.configure(image = self.images[image_index])
-
-        
-    def countFlags(self):
-        """Counts the number of flags around the current Tile()
-            saves the number in self.numFlags attribute
-            and returns the final self.numFlags
-        """
-        num = 0
-        for tile in self.adj:
-            num += 1 if tile.isFlagged() else 0
-        self.numFlags = num
-        return self.numFlags
+        self.button.configure(image = Tile.images[image_index])
+        flag_change = 1 if self.flag else -1
+        for adjTile in self.adj:
+            adjTile.numFlags += flag_change
+        return flag_change
 
     def countMines(self):
-        """Counts the number of mines around the current Tile()
+        """ Counts the number of mines around the current Tile()
             saves the count in self.count attribute.
             Additionally, it changes the self.label
 
@@ -112,7 +113,7 @@ class Tile(object):
         for tile in self.adj:
             num += 1 if tile.isMine() else 0
         self.count = num
-        self.label.configure(image = self.images[num])
+        self.label.configure(image = Tile.images[num])
     
     def show(self, event=None):
         """ Removes the self.button myLabel() that has been hiding the value/mine
@@ -130,7 +131,7 @@ class Tile(object):
                 if (check < 0) or (num < 0): check = -1
                 else: check += num
             elif self.mine:
-                if self.inPlay: self.label.configure(image = self.images[13])
+                if self.inPlay: self.label.configure(image = Tile.images[13])
                 return -1
             return check
         return 0
@@ -151,14 +152,6 @@ class Tile(object):
     def isMine(self):
         """ returns self.mine which is True if the Tile is a mine"""
         return self.mine
-
-    def isZero(self):
-        """ returns self.count == 0 i.e. True only if there are no Mines around this Tile"""
-        return self.count == 0
-
-    def isShown(self):
-        """ returns self.shown which is True if the Tile has been revealed"""
-        return self.shown
     
     def isFlagged(self):
         """ returns true iff shown is 10 i.e. the square is flagged as a mine"""
@@ -168,61 +161,91 @@ class Tile(object):
         """ returns self.inPlay which is True when the game is being played"""
         return self.inPlay
 
+    def isSafe(self):
+        """ returns True if # of adjacent Flags == # of adjacent mines
+                and if self.shown is True
+        """ 
+        return self.numFlags == self.count and self.shown
+
 class Board(object):
     def __init__(self, rows, cols, minecount, parent):
         self.rows = rows
         self.cols = cols
         self.numChecked = 0
-        self.minecount = minecount
+        self.numMines = minecount
+        self.numFlags = 0
         self.parent = parent
         self.tiles = []
-        self.mines = []
         self.minesArmed = False
         self.startTime = None
+
+        self.frame = tk.Frame(parent)
+        self.frame.pack()
+        self.mineLabel = tk.Label(self.frame, text="Mines: "+str(self.numMines))
+        self.mineLabel.grid(row=0, column=0, sticky="W", columnspan=3)
+        self.flagLabel = tk.Label(self.frame, text="Flags: "+str(self.numFlags))
+        self.flagLabel.grid(row=0, column=self.cols-3, sticky="E", columnspan=3)
         
         #add all tiles to the board
         for row in range(rows):
             self.tiles.append([])
             for col in range(cols):
-                self.tiles[row].append(Tile(parent=parent, row=row, col=col))
-                self.tiles[row][col].button.bind('<ButtonPress-1>',  self.setUpBombs)
-                self.tiles[row][col].button.bind('<ButtonRelease-1>',  self.showTile)
+                tile = Tile(parent=self.frame, row=row, col=col)
+                self.tiles[row].append(tile)
+                #left click listeners
+                tile.button.bind('<ButtonPress-1>',  self.pressTile)
+                tile.button.bind('<ButtonRelease-1>',  self.showTile)
+                #middle click listeners
+                tile.label.bind('<ButtonPress-2>', self.pressAdjTiles)
+                tile.label.bind('<ButtonRelease-2>', self.showAdjTiles)
+                #right click listeners
+                tile.button.bind('<ButtonPress-3>', self.pressTile)
+                tile.button.bind('<ButtonRelease-3>', self.toggleFlag)
                 
         #set up adjacency lists for each tile
         for row in range(rows):
             for col in range(cols):
+                adj = self.tiles[row][col].adj
                 #row above current tile
                 if row-1 >= 0:
-                   if col-1 >= 0: self.tiles[row][col].adj.append(self.tiles[row-1][col-1])
-                   self.tiles[row][col].adj.append(self.tiles[row-1][col])
-                   if col+1 < cols: self.tiles[row][col].adj.append(self.tiles[row-1][col+1])
+                   if col-1 >= 0: adj.append(self.tiles[row-1][col-1])
+                   adj.append(self.tiles[row-1][col])
+                   if col+1 < cols: adj.append(self.tiles[row-1][col+1])
                 #current row
-                if col-1 >= 0: self.tiles[row][col].adj.append(self.tiles[row][col-1])
-                if col+1 < cols: self.tiles[row][col].adj.append(self.tiles[row][col+1])
+                if col-1 >= 0: adj.append(self.tiles[row][col-1])
+                if col+1 < cols: adj.append(self.tiles[row][col+1])
                 #row below current tile
                 if row+1 < rows:
-                   if col-1 >= 0: self.tiles[row][col].adj.append(self.tiles[row+1][col-1])
-                   self.tiles[row][col].adj.append(self.tiles[row+1][col])
-                   if col+1 < cols: self.tiles[row][col].adj.append(self.tiles[row+1][col+1])
+                   if col-1 >= 0: adj.append(self.tiles[row+1][col-1])
+                   adj.append(self.tiles[row+1][col])
+                   if col+1 < cols: adj.append(self.tiles[row+1][col+1])
     
+    def replay(self, event=None):
+        """ Resets the Board to be replayed with the same settings
+            Note: the mine placement is randomized again
+        """
+        self.numChecked = 0
+        self.numFlags = 0
+        self.minesArmed = False
+        self.startTime = None
+        self.mineLabel.configure(text="Mines: "+str(self.numMines))
+        self.flagLabel.configure(text="Flags: "+str(self.numFlags))
+        for row in self.tiles:
+            for tile in row:
+                tile.replay()
+
     def setUpBombs(self, event):
-        clickedTile = event.widget.tile
-        # do nothing if clicked on Flag tile
-        if clickedTile.isFlagged(): return 0
-        clickedTile.buttonPress()
-        # end function if this isn't the first tile revealed in the game
-        if self.minesArmed:return 0
         pos = (event.widget.row * self.cols) + event.widget.col
         size = self.rows * self.cols
         #get a list random indexes in range to be mines
-        self.mines = random.sample(range(size), self.minecount)
-        if pos in self.mines:
-            self.mines.remove(pos)
+        mines = random.sample(range(size), self.numMines)
+        if pos in mines:
+            mines.remove(pos)
             temp = random.sample(range(size), 1)[0]
             while (temp == pos): temp = random.sample(range(size), 1)[0]
-            self.mines.append(temp)
+            mines.append(temp)
         #mark all mine squares as mines
-        for mine in self.mines:
+        for mine in mines:
             targetRow = int(mine/self.cols)
             targetCol = mine % self.cols
             self.tiles[targetRow][targetCol].setMine()
@@ -234,16 +257,60 @@ class Board(object):
         self.startTime = time.time()
         return 1
 
+    def checkEnd(self, num):
+        """ ends the game as a Loss if num < 0
+            Otherwise adds num to self.numChecked
+            ends the game as a win if win conditions are met
+            i.e. total # of tiles - # of tiles checked == # of mines
+        """
+        if num < 0:
+            self.endGame("You Lost!\n")
+        else:
+            self.numChecked += num
+            if (self.rows * self.cols) - self.numChecked == self.numMines:
+                self.endGame("You Won!\n")
+
+    def pressTile(self, event):
+        """ Changes the image on the clicked Tile accordingly
+            i.e. if Tile not isFlagged()
+            also calls setUpBombs() if this is the first left click of the game
+        """
+        clickedTile = event.widget.tile
+        if not clickedTile.isFlagged():
+            clickedTile.buttonPress()
+            if not self.minesArmed and event.num == 1:
+                self.setUpBombs(event)
+
+    def toggleFlag(self, event):
+        """ calls setFlag() on the Tile that was right clicked"""
+        self.numFlags += event.widget.tile.setFlag()
+        self.flagLabel.configure(text="Flags: "+str(self.numFlags))
+        
+                
+    def pressAdjTiles(self, event):
+        """ Changes the image on the adjacent Tiles to be clicked
+            only if the adjacent Tile is not flagged and not shown
+        """
+        clickedTile = event.widget.tile
+        for adjTile in clickedTile.adj:
+            if not adjTile.isFlagged():
+                adjTile.buttonPress()
+        
     def showTile(self, event):
         if event.widget.tile.isInPlay():
             returned = event.widget.tile.show()
-            if returned < 0:
-                self.endGame("You Lost!\n")
-            else:
-                self.numChecked += returned
-                if (self.rows * self.cols) - self.numChecked == self.minecount:
-                    self.endGame("You Won!\n")
+            self.checkEnd(returned)
 
+    def showAdjTiles(self,event):
+        clickedTile = event.widget.tile
+        if clickedTile.isSafe() and clickedTile.isInPlay(): 
+            returned = event.widget.tile.showAround()
+            self.checkEnd(returned)
+        else:
+            for adjTile in clickedTile.adj:
+                if not adjTile.isFlagged():
+                    adjTile.button.configure(image=Tile.images[10])
+            
     def revealBombs(self):
         for row in self.tiles:
             for tile in row:
@@ -251,7 +318,7 @@ class Board(object):
                 if tile.isMine():
                     tile.show()
                 elif tile.isFlagged():
-                    tile.button.configure(image=tile.images[12])
+                    tile.button.configure(image=Tile.images[12])
         
     def endGame(self, msg):
         elapsedTime = time.time() - self.startTime
@@ -262,26 +329,43 @@ class Board(object):
         self.revealBombs()
         messagebox.showinfo('Game Over', msg)
 
-def game(rows,cols,mines,root):
+def reset(rows,cols,mines,root):
+    """ Calls root.destroy and restarts the game with given settings
+        Arguments:
+            rows = # rows in the new game
+            cols = # columns in the new game
+            mines = # of mines in the new game
+    """
     root.destroy()
     main(rows,cols,mines)
 
 def main(rows, cols, mines):
     root = tk.Tk()
+    #clear Tile.images
+    del Tile.images[:]
+    #load all needed images into Tile.images
+    for i in range(14):
+        Tile.images.append(tk.PhotoImage(file = "images/tile-"+str(i)+".gif"))
     menu = tk.Menu(root)
-    root.config(menu=menu)
+    root.configure(menu=menu)
     root.title("Minesweeper")
-    gamemenu = tk.Menu(menu)
+    myBoard = Board(rows, cols, mines, root)
+    gamemenu = tk.Menu(menu, tearoff = False)
     menu.add_cascade(label="Game", menu=gamemenu)
-    gamemenu.add_command(label="Beginner", command=lambda: game(8,8,10,root))
-    gamemenu.add_command(label="Intermediate", command=lambda: game(16,16,40,root))
-    gamemenu.add_command(label="Expert", command=lambda: game(16,30,99,root))
+    gamemenu.add_command(label="Replay", command=lambda: myBoard.replay())
+    gamemenu.add_separator()
+    gamemenu.add_command(label="Beginner", command=lambda: reset(8,8,10,root))
+    gamemenu.add_command(label="Intermediate", command=lambda: reset(16,16,40,root))
+    gamemenu.add_command(label="Expert", command=lambda: reset(16,30,99,root))
     gamemenu.add_separator()
     gamemenu.add_command(label="Custom", command=None)
     gamemenu.add_separator()
     gamemenu.add_command(label="Exit", command=root.destroy)
-    myBoard = Board(rows, cols, mines, root)
-    root.geometry(str(20*cols)+"x"+str(20*rows))
+    windowWidth = str(20*cols+40)
+    windowHeight = str(20*rows+40)
+    root.geometry(windowWidth+'x'+windowHeight)
+    root.minsize(windowWidth, windowHeight)
+    root.maxsize(windowWidth, windowHeight)
     root.mainloop()
 
 if __name__ == "__main__":

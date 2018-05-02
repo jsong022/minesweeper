@@ -1,3 +1,6 @@
+# Author: Jay Song
+# Date: May 2, 2018
+
 import random
 import time
 import tkinter as tk
@@ -10,7 +13,7 @@ class myLabel(tk.Label):
             self.col: Integer denoting the column location of this Label (e.g. 0 is left most column)
             self.tile: points to the Tile() instance this myLabel belongs to
         """
-        tk.Label.__init__(self,parent, image=image)
+        tk.Label.__init__(self, parent, image=image)
         self.row = row
         self.col = col
         self.tile = tile
@@ -436,39 +439,182 @@ class Board(object):
         self.flagLabel.configure(text="Flags: "+str(self.numFlags))
         messagebox.showinfo('Game Over', msg)
 
-def options(board, menuVar):
-    return
+class App(tk.Tk):
+    def __init__(self, rows, cols, mines):
+        """ inherits from tk.Tk()
+            creates menu items and makes a board
+            Arguments:
+                rows/cols = total # of rows/columns in the board to initialize
+                mines = total # of mines in the inital board
+            Important variables:
+                self.menuVar = for the radio buttons for the quick start options in menu
+                self.checkVar = for custom options checkbox in menu (4 is on)
+                self.optionVar = for tracking radio button chosen in optiosn window
+                    (defined in self.options)
+                self.entry = list constaining 3 Entry widgets in options window
+                    (defined in self.options)
+        """
+        tk.Tk.__init__(self)
+        
+        #load all needed images into Tile.images
+        for i in range(14):
+            Tile.images.append(tk.PhotoImage(file = "images/tile-"+str(i)+".gif"))
+        
+        self.menu = tk.Menu(self)
+        self.configure(menu=self.menu)
+        self.title("Minesweeper")
+        self.myBoard = Board(rows, cols, mines, self)
+        self.menuVar = tk.IntVar(self)
+        self.menuVar.set(1)
+        self.checkVar = tk.IntVar(self)
+        self.checkVar.set(1)
+        self.gamemenu = tk.Menu(self.menu, tearoff = False)
+        self.menu.add_cascade(label="Game", menu=self.gamemenu)
+        self.gamemenu.add_command(label="New Game", command=self.myBoard.replay)
+        self.gamemenu.add_separator()
+        self.gamemenu.add_radiobutton(variable = self.menuVar, value=1, label="Beginner", command=lambda: self.resize(8,8,10))
+        self.gamemenu.add_radiobutton(variable = self.menuVar, value=2, label="Intermediate", command=lambda: self.resize(16,16,40))
+        self.gamemenu.add_radiobutton(variable = self.menuVar, value=3, label="Expert", command=lambda: self.resize(16,30,99))
+        self.gamemenu.add_separator()
+        self.gamemenu.add_checkbutton(variable = self.checkVar, onvalue=4, offvalue=0, label="Custom", command= self.options)
+        self.gamemenu.add_separator()
+        self.gamemenu.add_command(label="Exit", command=self.exitGame)
+        windowWidth = str(20*cols+40)
+        windowHeight = str(20*rows+60)
+        self.protocol("WM_DELETE_WINDOW", self.exitGame)
+        self.minsize(windowWidth, windowHeight)
+        self.maxsize(windowWidth, windowHeight)
+        self.geometry(windowWidth+'x'+windowHeight)
+        self.mainloop()
 
-def main(rows, cols, mines):
-    root = tk.Tk()
-    #clear Tile.images
-    del Tile.images[:]
-    #load all needed images into Tile.images
-    for i in range(14):
-        Tile.images.append(tk.PhotoImage(file = "images/tile-"+str(i)+".gif"))
-    menu = tk.Menu(root)
-    root.configure(menu=menu)
-    root.title("Minesweeper")
-    myBoard = Board(rows, cols, mines, root)
-    menuVar = tk.IntVar(root)
-    menuVar.set(4)
-    gamemenu = tk.Menu(menu, tearoff = False)
-    menu.add_cascade(label="Game", menu=gamemenu)
-    gamemenu.add_command(label="New Game", command=myBoard.replay)
-    gamemenu.add_separator()
-    gamemenu.add_radiobutton(variable = menuVar, value=1, label="Beginner", command=lambda: myBoard.resize(8,8,10))
-    gamemenu.add_radiobutton(variable = menuVar, value=2, label="Intermediate", command=lambda: myBoard.resize(16,16,40))
-    gamemenu.add_radiobutton(variable = menuVar, value=3, label="Expert", command=lambda: myBoard.resize(16,30,99))
-    gamemenu.add_separator()
-    gamemenu.add_radiobutton(variable = menuVar, value=4, label="Custom", command=lambda: options(myBoard, menuVar))
-    gamemenu.add_separator()
-    gamemenu.add_command(label="Exit", command=root.destroy)
-    windowWidth = str(20*cols+40)
-    windowHeight = str(20*rows+60)
-    root.minsize(windowWidth, windowHeight)
-    root.maxsize(windowWidth, windowHeight)
-    root.geometry(windowWidth+'x'+windowHeight)
-    root.mainloop()
+    def resize(self, rows, cols, mines):
+        """ unchecks menu custom game checkbox appropriately and resizes self.myBoard"""
+        if self.menuVar.get() != 4: self.checkVar.set(0)
+        self.myBoard.resize(rows, cols, mines)
+        
+    def exitGame(self):
+        """ destroys everything and exits the program """
+        self.myBoard.clearFrame()
+        del self.myBoard
+        self.destroy
+        exit()
 
+    def optionSet(self):
+        """ Handles the custom game options window button click.
+            Resizes the board according to specifications.
+            If Custom game was chosen but specifications are invalid,
+            a popup message notifies the user without closing the options window
+        """
+        choice = self.optionVar.get()
+        
+        #if custom game is chosen
+        if choice == 4:
+            msg = "Invalid Input!"
+            valid = True
+            nums = []
+            
+            #make sure all inputs are integers
+            for i in range(3):
+                try:
+                    value = int(self.entry[i].get())
+                    nums.append(value)
+                except ValueError:
+                    valid = False
+                    if i == 0: msg += "\nHeight "
+                    elif i == 1: msg += "\nWidth "
+                    elif i == 2: msg += "\nMines "
+                    msg += "input must be an integer."
+                    
+            #check for other invalid inputs
+            #(negative input, not wide enough, too many mines)
+            if valid:
+                if nums[0]<=0 or nums[1]<=0 or nums[2]<=0:
+                    valid = False
+                    msg += "\nInputs must be integers greater than zero"
+                elif nums[1] < 8 :
+                    valid = False
+                    msg += "\nMinimum width allowed is 8"
+                if nums[0]*nums[1] <= nums[2]:
+                    valid = False
+                    msg += "\nToo many mines to fit on the board!"
+
+            #start game according to specs if input was valid
+            if valid:                    
+                self.menuVar.set(choice)
+                self.checkVar.set(4)
+                self.resize(nums[0],nums[1],nums[2])
+                self.optionsWindow.destroy()
+            #otherwise popup error and keep options window open
+            else:
+                messagebox.showinfo('Custom Game Error', msg)
+
+        #start game according to difficulty chosen        
+        else:
+            self.menuVar.set(choice)
+            if choice == 1: self.resize(8,8,10)
+            elif choice == 2: self.resize(16,16,40)
+            else: self.resize(16,30,99)
+            self.optionsWindow.destroy()
+    
+    def entryToggle(self):
+        """ enables or disables the entry widgets in options window based on options radio button """
+        status = "normal" if self.optionVar.get() == 4 else "disabled"
+        for i in range(3):
+            self.entry[i].configure(state=status)
+        
+    def options(self):
+        """ option the custom game options """
+        self.checkVar.set(self.menuVar.get())
+        #create window then set window size & title
+        self.optionsWindow = tk.Toplevel()
+        self.optionsWindow.grab_set()
+        self.optionsWindow.title("Options")
+        windowWidth = "225"
+        windowHeight = "175"
+        self.optionsWindow.minsize(windowWidth, windowHeight)
+        self.optionsWindow.maxsize(windowWidth, windowHeight)
+        self.optionsWindow.geometry(windowWidth+'x'+windowHeight)
+        
+        #creates the frame and self.optionVar
+        frame = tk.Frame(self.optionsWindow)
+        frame.pack()
+        self.optionVar = tk.IntVar()
+        self.optionVar.set(self.menuVar.get())
+
+        #add the choices as radio buttons to the frame
+        choices = [
+            ("Beginner"+"\n8 X 8"+"\n10 Mines", 1),
+            ("Intermediate"+"\n16 X 16"+"\n40 Mines", 2),
+            ("Expert"+"\n16 X 30"+"\n99 Mines", 3),
+            ("Custom", 4)
+        ]
+        for text, value in choices:
+            button = tk.Radiobutton(frame, text=text, value=value, variable=self.optionVar, justify="left", command=self.entryToggle)
+            row, col, colspan = value-1, 0, 1
+            if value is 4:row, col, colspan = 0, 1, 2
+            button.grid(row=row, column=col, columnspan=colspan, sticky="W")
+            
+        #add the text entry options for the custom game
+        frame2 = tk.Frame(frame)
+        frame2.grid(row=1, column=1, sticky="N")
+
+        rowLabel = tk.Label(frame2, text="Height: ", justify="left")
+        rowLabel.grid(row=0, column=0)
+        colLabel = tk.Label(frame2, text="Width: ", justify="left")
+        colLabel.grid(row=1, column=0)
+        minLabel = tk.Label(frame2, text="Mines: ", justify="left")
+        minLabel.grid(row=2, column=0)
+
+        self.entry = []
+        for i in range(3):
+            self.entry.append(tk.Entry(frame2,width=10))
+            self.entry[i].grid(row=i, column=1)
+        self.entryToggle()
+        
+        #add the submit button to handle options given in the window
+        submit = tk.Button(frame, text="Play", command=self.optionSet)
+        submit.grid(row=2, column=1, sticky="WE")
+    
+        
 if __name__ == "__main__":
-    main(10,10,20)
+    App(8,8,16)

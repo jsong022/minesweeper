@@ -20,6 +20,8 @@ My own versions of the classic Minesweeper game. 2 versions both written with Py
 	- all Mines that have not been flagged are revealed
 	- Exploded Mine (the cause of loss) is marked with a red background
 	- all incorrect Flags are crossed out
+- 3 Quick Start difficulties available in the Menu under Game
+- Custom game may be configured by Game > Custom
 
 ### Instructions for Command Line version
 - Game will first prompt for the minefield dimensions and the total number of mines
@@ -68,15 +70,15 @@ My own versions of the classic Minesweeper game. 2 versions both written with Py
 - [x] Implement a command line interface for the set up
 - [x] Finalize the base gameplay logic (win condition, replays, timer, etc)
 - [x] Create a GUI
-- [ ] Implement all base gameplay functionality in GUI version
-	- [ ] Custom game settings (currently hardcoded 10x10 board wtih 20 mines)
-	- [x] Difficulty levels (Beginner, Intermediate, and Expert) chosen from menu bar
-	- [x] Proper end of game (currently program just quits upon win/loss)
-	- [x] Replay functionality added (as a menu item under Game). Replay with same boardsize & number of mines.
+- [x] Implement all base gameplay functionality in GUI version
+	- [x] Custom game settings
+	- [x] Difficulty levels (Beginner, Intermediate, and Expert) chosen from menu or options
+	- [x] Proper end of game
+	- [x] Replay functionality added (Menu Item & Smiley Face). Replay with same boardsize & number of mines.
 	- [x] Middle Mouse Button functionality added
 	- [x] Add comments/docstrings
-- [ ] Make GUI look pretty (IN PROGRESS)
+- [x] Make GUI look pretty (IN PROGRESS)
 	- [x] Added a flag counter
 	- [x] Added total number of mines on field
 	- [x] Fixed window size
-	- [x] Smiley Button that is animated and works as a quick reset 
+	- [x] Smiley Button that is animated and works as a quick reset

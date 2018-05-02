@@ -617,4 +617,4 @@ class App(tk.Tk):
     
         
 if __name__ == "__main__":
-    App(8,8,16)
+    App(8,8,10)

@@ -495,9 +495,15 @@ class App(tk.Tk):
     def exitGame(self):
         """ destroys everything and exits the program """
         self.myBoard.clearFrame()
+        for tilelist in self.myBoard.tiles:
+            for tile in tilelist:
+                del tile.adj[:]
+                del tile
+        del Tile.images[:]
+        del self.myBoard.images[:]
         del self.myBoard
-        self.destroy
-        exit()
+        self.destroy()
+        exit(0)
 
     def optionSet(self):
         """ Handles the custom game options window button click.
@@ -566,7 +572,7 @@ class App(tk.Tk):
         """ option the custom game options """
         self.checkVar.set(self.menuVar.get())
         #create window then set window size & title
-        self.optionsWindow = tk.Toplevel()
+        self.optionsWindow = tk.Toplevel(self)
         self.optionsWindow.grab_set()
         self.optionsWindow.title("Options")
         windowWidth = "225"
@@ -578,7 +584,7 @@ class App(tk.Tk):
         #creates the frame and self.optionVar
         frame = tk.Frame(self.optionsWindow)
         frame.pack()
-        self.optionVar = tk.IntVar()
+        self.optionVar = tk.IntVar(self)
         self.optionVar.set(self.menuVar.get())
 
         #add the choices as radio buttons to the frame
